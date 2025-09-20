@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recap India</title>
+    <!-- Use Inter font from Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- d3.js for data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+    <!-- Tone.js for audio synthesis -->
+    <script src="https://cdn.jsdelivr.net/npm/tone@14"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7fafc;
+        }
+        .ai-result-container a {
+            color: #4f46e5;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <!-- Header -->
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <a href="#" class="text-2xl font-bold text-gray-900">
+                Recap India
+            </a>
+            <nav class="hidden md:flex space-x-8">
+                <a href="#about" class="text-gray-600 hover:text-gray-900 font-medium transition-colors">About</a>
+                <a href="#recaps" class="text-gray-600 hover:text-gray-900 font-medium transition-colors">Recaps</a>
+                <a href="#ai-insights" class="text-gray-600 hover:text-gray-900 font-medium transition-colors">AI Insights</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="py-12 px-4 sm:px-6 lg:px-8">
+
+        <!-- Hero Section -->
+        <section class="max-w-4xl mx-auto text-center mb-16">
+            <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 leading-tight mb-4">
+                Rapid, Clear Insights on India's News.
+            </h1>
+            <p class="text-lg sm:text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+                An AI-powered platform designed to cut through the clutter and deliver the context you need on the biggest stories across the nation.
+            </p>
+            <a href="#subscribe" class="bg-indigo-600 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:bg-indigo-700 transition-colors duration-300 transform hover:scale-105">
+                Get Your First Recap
+            </a>
+        </section>
+
+        <!-- AI Insights Section -->
+        <section id="ai-insights" class="max-w-4xl mx-auto text-center mb-16">
+            <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 text-center mb-12">Ask Our AI Analyst</h2>
+            <div class="bg-white rounded-2xl shadow-lg p-8 border border-gray-200">
+                <p class="text-gray-600 mb-6">
+                    Enter a question about a recent news event or trend in India, and our AI will generate a concise, factual recap with audio and a dynamic chart.
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center mb-6">
+                    <input type="text" id="ai-query" placeholder="e.g., What are the key takeaways from the recent budget?" class="flex-1 px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-300 text-gray-900">
+                    <button id="get-insight-btn" class="bg-indigo-600 text-white font-bold py-3 px-6 rounded-xl shadow-md hover:bg-indigo-700 transition-colors duration-300 transform hover:scale-105">
+                        Get AI Insight
+                    </button>
+                </div>
+                <div id="ai-result-container" class="mt-8 text-left p-6 bg-gray-50 rounded-lg hidden">
+                    <div id="loading-indicator" class="text-center text-gray-500 font-medium hidden">
+                        Analyzing news... this may take a moment.
+                    </div>
+                    <p id="ai-result" class="text-gray-700 leading-relaxed"></p>
+                    <div id="audio-container" class="mt-4 hidden">
+                        <button id="play-audio-btn" class="bg-gray-200 text-gray-800 py-2 px-4 rounded-full font-medium transition-colors hover:bg-gray-300">
+                            Play Audio Recap
+                        </button>
+                    </div>
+                    <div id="visualization-container" class="mt-6 flex justify-center">
+                        <!-- Dynamic chart will be rendered here -->
+                        <svg id="chart" class="w-full h-64 bg-white rounded-lg shadow-inner"></svg>
+                    </div>
+                    <div id="citations" class="mt-4 text-xs text-gray-500"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Recent Recaps Section -->
+        <section id="recaps" class="max-w-7xl mx-auto mb-16">
+            <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 text-center mb-12">Latest Recaps</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Recap Card 1 -->
+                <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-200 hover:shadow-xl transition-shadow duration-300">
+                    <img src="https://placehold.co/600x400/808080/FFFFFF?text=AI+Generated+Chart" alt="AI Analysis Chart" class="rounded-xl mb-4 w-full h-auto">
+                    <h3 class="text-xl font-bold text-gray-900 mb-2">The Week in Tech: AI Adoption in Bangalore</h3>
+                    <p class="text-gray-600 text-sm mb-4">Our AI sifts through data to reveal key trends in tech startups and talent migration. Read the full analysis.</p>
+                    <a href="#" class="text-indigo-600 font-medium hover:underline transition-colors">Read More &rarr;</a>
+                </div>
+                
+                <!-- Recap Card 2 -->
+                <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-200 hover:shadow-xl transition-shadow duration-300">
+                    <img src="https://placehold.co/600x400/808080/FFFFFF?text=AI+Generated+Chart" alt="Political Map Graphic" class="rounded-xl mb-4 w-full h-auto">
+                    <h3 class="text-xl font-bold text-gray-900 mb-2">Political Recap: Key Legislative Shifts in Q4</h3>
+                    <p class="text-gray-600 text-sm mb-4">A breakdown of recent policy changes and their potential impact on national infrastructure projects. Learn more inside.</p>
+                    <a href="#" class="text-indigo-600 font-medium hover:underline transition-colors">Read More &rarr;</a>
+                </div>
+
+                <!-- Recap Card 3 -->
+                <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-200 hover:shadow-xl transition-shadow duration-300">
+                    <img src="https://placehold.co/600x400/808080/FFFFFF?text=AI+Generated+Chart" alt="Economic Chart Graphic" class="rounded-xl mb-4 w-full h-auto">
+                    <h3 class="text-xl font-bold text-gray-900 mb-2">Economic Digest: Inflationary Trends and RBI Actions</h3>
+                    <p class="text-gray-600 text-sm mb-4">Our model analyzes financial data to explain recent trends and forecast future economic stability. Read the full report.</p>
+                    <a href="#" class="text-indigo-600 font-medium hover:underline transition-colors">Read More &rarr;</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Newsletter Signup Section -->
+        <section id="subscribe" class="max-w-3xl mx-auto bg-white rounded-2xl shadow-lg p-8 sm:p-12 text-center border border-gray-200">
+            <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">Get Daily AI-Powered Recaps</h2>
+            <p class="text-gray-600 mb-6 max-w-xl mx-auto">
+                Join thousands of readers who get our concise, clear, and context-rich news digests sent directly to their inbox.
+            </p>
+            <form action="https://recapindia.substack.com/embed" method="post" class="flex flex-col sm:flex-row gap-4 justify-center">
+                <input type="email" name="email" id="email" placeholder="Your email address" required class="flex-1 px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-300 text-gray-900">
+                <input type="hidden" name="embed" value="true">
+                <button type="submit" class="bg-indigo-600 text-white font-bold py-3 px-6 rounded-xl shadow-md hover:bg-indigo-700 transition-colors duration-300 transform hover:scale-105">
+                    Subscribe
+                </button>
+            </form>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-gray-300 py-8 mt-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center sm:text-left">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-8">
+                <div class="sm:col-span-2">
+                    <h3 class="text-lg font-bold text-white mb-2">Recap India</h3>
+                    <p class="text-sm">Bringing clarity to India's news landscape with AI-powered insights.</p>
+                </div>
+                <div class="flex justify-center sm:justify-end space-x-4">
+                    <a href="#" class="text-gray-400 hover:text-white transition-colors">Twitter</a>
+                    <a href="#" class="text-gray-400 hover:text-white transition-colors">LinkedIn</a>
+                    <a href="#" class="text-gray-400 hover:text-white transition-colors">Contact</a>
+                </div>
+            </div>
+            <div class="mt-8 text-center border-t border-gray-700 pt-4">
+                <p class="text-xs">&copy; 2025 Recap India. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('get-insight-btn').addEventListener('click', getAIInsight);
+        document.getElementById('ai-query').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                getAIInsight();
+            }
+        });
+
+        async function getAIInsight() {
+            const query = document.getElementById('ai-query').value;
+            const resultContainer = document.getElementById('ai-result-container');
+            const resultElement = document.getElementById('ai-result');
+            const loadingIndicator = document.getElementById('loading-indicator');
+            const audioContainer = document.getElementById('audio-container');
+            const playAudioBtn = document.getElementById('play-audio-btn');
+            const citationsElement = document.getElementById('citations');
+            const chartSvg = d3.select("#chart");
+
+            if (!query) {
+                resultElement.textContent = 'Please enter a query.';
+                resultContainer.classList.remove('hidden');
+                return;
+            }
+
+            resultContainer.classList.remove('hidden');
+            resultElement.textContent = '';
+            citationsElement.textContent = '';
+            audioContainer.classList.add('hidden');
+            chartSvg.html(''); // Clear previous chart
+            loadingIndicator.classList.remove('hidden');
+            
+            // API call to the Gemini API with search grounding
+            const systemPrompt = "You are a professional news analyst. Provide a concise, clear recap of the requested news topic in India. Be factual and a neutral tone. The response should be a single, well-structured paragraph. Do not add any conversational text.";
+            const userQuery = query;
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+            const ttsApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
+
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                tools: [{ "google_search": {} }],
+                systemInstruction: {
+                    parts: [{ text: systemPrompt }]
+                }
+            };
+            
+            try {
+                // Fetch text and citations
+                const textResponse = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!textResponse.ok) throw new Error(`Text API error: ${textResponse.status}`);
+                
+                const textResult = await textResponse.json();
+                const textCandidate = textResult.candidates?.[0];
+
+                if (textCandidate && textCandidate.content?.parts?.[0]?.text) {
+                    const text = textCandidate.content.parts[0].text;
+                    let sources = [];
+                    const groundingMetadata = textCandidate.groundingMetadata;
+                    if (groundingMetadata && groundingMetadata.groundingAttributions) {
+                        sources = groundingMetadata.groundingAttributions
+                            .map(attribution => ({
+                                uri: attribution.web?.uri,
+                                title: attribution.web?.title,
+                            }))
+                            .filter(source => source.uri && source.title);
+                    }
+
+                    resultElement.textContent = text;
+                    if (sources.length > 0) {
+                        const citationHtml = sources.map((source, index) => `
+                            <a href="${source.uri}" target="_blank" rel="noopener noreferrer" class="hover:underline text-blue-500">
+                                [${index + 1}] ${source.title}
+                            </a>
+                        `).join(' | ');
+                        citationsElement.innerHTML = `<p class="mt-2">**Sources:** ${citationHtml}</p>`;
+                    }
+
+                    // --- AI-Generated Chart (using a mock function) ---
+                    const chartData = getMockChartData(query);
+                    if (chartData) {
+                        drawChart(chartData);
+                    }
+                    
+                    // --- AI-Generated Audio (TTS) ---
+                    try {
+                        const ttsPayload = {
+                            contents: [{ parts: [{ text: text }] }],
+                            generationConfig: {
+                                responseModalities: ["AUDIO"],
+                                speechConfig: {
+                                    voiceConfig: {
+                                        prebuiltVoiceConfig: { voiceName: "Kore" }
+                                    }
+                                }
+                            },
+                        };
+
+                        const ttsResponse = await fetch(ttsApiUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(ttsPayload)
+                        });
+                        if (!ttsResponse.ok) throw new Error(`TTS API error: ${ttsResponse.status}`);
+                        const ttsResult = await ttsResponse.json();
+                        const audioData = ttsResult?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+
+                        if (audioData) {
+                            const pcmData = base64ToArrayBuffer(audioData);
+                            const pcm16 = new Int16Array(pcmData);
+                            const wavBlob = pcmToWav(pcm16, 16000); // 16000 Hz from API
+                            const audioUrl = URL.createObjectURL(wavBlob);
+
+                            playAudioBtn.onclick = () => {
+                                const audio = new Audio(audioUrl);
+                                audio.play();
+                            };
+                            audioContainer.classList.remove('hidden');
+                        }
+                    } catch (ttsError) {
+                        console.error("Failed to generate audio:", ttsError);
+                    }
+
+                } else {
+                    resultElement.textContent = 'Sorry, I could not generate a recap for that query. Please try again.';
+                    citationsElement.textContent = '';
+                }
+            } catch (error) {
+                console.error("Failed to fetch AI insight:", error);
+                resultElement.textContent = 'An error occurred while fetching the data. Please try again later.';
+            } finally {
+                loadingIndicator.classList.add('hidden');
+            }
+        }
+        
+        // --- Helper Functions for AI features ---
+
+        function base64ToArrayBuffer(base64) {
+            const binaryString = atob(base64);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return bytes.buffer;
+        }
+
+        function pcmToWav(pcmData, sampleRate) {
+            const pcm16 = pcmData;
+            const numChannels = 1;
+            const bitDepth = 16;
+            const byteRate = sampleRate * numChannels * (bitDepth / 8);
+            const blockAlign = numChannels * (bitDepth / 8);
+            const dataSize = pcm16.length * 2;
+            const buffer = new ArrayBuffer(44 + dataSize);
+            const view = new DataView(buffer);
+            
+            // RIFF chunk
+            writeString(view, 0, 'RIFF');
+            view.setUint32(4, 36 + dataSize, true);
+            writeString(view, 8, 'WAVE');
+            
+            // fmt chunk
+            writeString(view, 12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true); // PCM format
+            view.setUint16(22, numChannels, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, byteRate, true);
+            view.setUint16(32, blockAlign, true);
+            view.setUint16(34, bitDepth, true);
+            
+            // data chunk
+            writeString(view, 36, 'data');
+            view.setUint32(40, dataSize, true);
+            
+            // PCM data
+            for (let i = 0; i < pcm16.length; i++) {
+                view.setInt16(44 + i * 2, pcm16[i], true);
+            }
+            
+            return new Blob([view], { type: 'audio/wav' });
+        }
+
+        function writeString(view, offset, string) {
+            for (let i = 0; i < string.length; i++) {
+                view.setUint8(offset + i, string.charCodeAt(i));
+            }
+        }
+        
+        // Mock function to generate chart data based on query
+        function getMockChartData(query) {
+            if (query.toLowerCase().includes('budget')) {
+                return [
+                    { label: 'Infrastructure', value: 30 },
+                    { label: 'Healthcare', value: 15 },
+                    { label: 'Education', value: 20 },
+                    { label: 'Defense', value: 35 }
+                ];
+            }
+            return null;
+        }
+        
+        // Function to draw a bar chart using d3
+        function drawChart(data) {
+            const svg = d3.select("#chart");
+            const width = +svg.attr("width") || 600;
+            const height = +svg.attr("height") || 400;
+            const margin = { top: 20, right: 20, bottom: 60, left: 40 };
+            const innerWidth = width - margin.left - margin.right;
+            const innerHeight = height - margin.top - margin.bottom;
+
+            svg.html(''); // Clear previous chart
+            
+            const g = svg.append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+
+            const x = d3.scaleBand()
+                .domain(data.map(d => d.label))
+                .range([0, innerWidth])
+                .padding(0.2);
+
+            const y = d3.scaleLinear()
+                .domain([0, d3.max(data, d => d.value)])
+                .nice()
+                .range([innerHeight, 0]);
+
+            // Add the bars
+            g.selectAll(".bar")
+                .data(data)
+                .enter().append("rect")
+                .attr("class", "bar fill-indigo-500")
+                .attr("x", d => x(d.label))
+                .attr("y", d => y(d.value))
+                .attr("width", x.bandwidth())
+                .attr("height", d => innerHeight - y(d.value));
+
+            // Add the x-axis
+            g.append("g")
+                .attr("transform", `translate(0,${innerHeight})`)
+                .call(d3.axisBottom(x))
+                .selectAll("text")
+                .style("text-anchor", "end")
+                .attr("dx", "-.8em")
+                .attr("dy", ".15em")
+                .attr("transform", "rotate(-45)");
+
+            // Add the y-axis
+            g.append("g")
+                .call(d3.axisLeft(y));
+
+            // Add value labels on bars
+            g.selectAll(".label")
+                .data(data)
+                .enter().append("text")
+                .attr("class", "label text-xs text-gray-700")
+                .attr("x", d => x(d.label) + x.bandwidth() / 2)
+                .attr("y", d => y(d.value) - 5)
+                .attr("text-anchor", "middle")
+                .text(d => d.value + "%");
+        }
+    </script>
+</body>
+</html>
