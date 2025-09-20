@@ -14,8 +14,99 @@
     <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
     <!-- Tone.js for audio synthesis -->
     <script src="https://cdn.jsdelivr.net/npm/tone@14"></script>
-    <!-- EmailJS for sending emails -->
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <!-- Firebase Libraries -->
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+      import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+      import { getFirestore, collection, addDoc, onSnapshot, orderBy, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+      import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+      
+      const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+      const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+      const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+      
+      setLogLevel('Debug');
+      
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+      const auth = getAuth(app);
+      let userId = '';
+
+      onAuthStateChanged(auth, async (user) => {
+        if (user) {
+          userId = user.uid;
+          console.log("Authenticated user ID:", userId);
+          document.getElementById('recaps-container').classList.remove('hidden');
+          document.getElementById('admin-section').classList.remove('hidden');
+          setupRealtimeRecaps();
+        } else {
+          try {
+            if (initialAuthToken) {
+              await signInWithCustomToken(auth, initialAuthToken);
+            } else {
+              await signInAnonymously(auth);
+            }
+          } catch (error) {
+            console.error("Authentication failed:", error);
+            // Handle auth error if needed
+          }
+        }
+      });
+      
+      function setupRealtimeRecaps() {
+        const recapsCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/recaps`);
+        const q = query(recapsCollectionRef, orderBy('createdAt', 'desc'));
+
+        onSnapshot(q, (snapshot) => {
+          const recaps = [];
+          snapshot.forEach(doc => {
+            recaps.push({ id: doc.id, ...doc.data() });
+          });
+          renderRecaps(recaps);
+        });
+      }
+
+      function renderRecaps(recaps) {
+        const container = document.getElementById('recaps-container');
+        container.innerHTML = ''; // Clear existing content
+        if (recaps.length === 0) {
+          container.innerHTML = '<p class="text-gray-500 text-center">No recaps yet. Use the AI Analyst to create your first one!</p>';
+          return;
+        }
+
+        recaps.forEach(recap => {
+          const recapCard = `
+            <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-200 hover:shadow-xl transition-shadow duration-300">
+                <img src="${recap.imageUrl || 'https://placehold.co/600x400/808080/FFFFFF?text=Recap+India'}" alt="${recap.title}" class="rounded-xl mb-4 w-full h-auto">
+                <h3 class="text-xl font-bold text-gray-900 mb-2">${recap.title}</h3>
+                <p class="text-gray-600 text-sm mb-4">${recap.content.substring(0, 150)}...</p>
+                <p class="text-xs text-gray-400">Published: ${new Date(recap.createdAt?.toDate()).toLocaleDateString()}</p>
+            </div>
+          `;
+          container.innerHTML += recapCard;
+        });
+      }
+
+      window.addRecapToFirestore = async (recapData) => {
+        if (!userId) {
+          alert('You must be authenticated to add a recap.');
+          return;
+        }
+
+        const recapsCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/recaps`);
+        try {
+          await addDoc(recapsCollectionRef, {
+            ...recapData,
+            createdAt: serverTimestamp()
+          });
+          alert('Recap saved successfully!');
+        } catch (e) {
+          console.error("Error adding document: ", e);
+          alert('Error saving recap. Please try again.');
+        }
+      };
+
+    </script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -58,65 +149,46 @@
             </a>
         </section>
 
-        <!-- AI Insights Section -->
-        <section id="ai-insights" class="max-w-4xl mx-auto text-center mb-16">
-            <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 text-center mb-12">Ask Our AI Analyst</h2>
-            <div class="bg-white rounded-2xl shadow-lg p-8 border border-gray-200">
-                <p class="text-gray-600 mb-6">
-                    Enter a question about a recent news event or trend in India, and our AI will generate a concise, factual recap with audio and a dynamic chart.
-                </p>
-                <div class="flex flex-col sm:flex-row gap-4 justify-center mb-6">
-                    <input type="text" id="ai-query" placeholder="e.g., What are the key takeaways from the recent budget?" class="flex-1 px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-300 text-gray-900">
-                    <button id="get-insight-btn" class="bg-indigo-600 text-white font-bold py-3 px-6 rounded-xl shadow-md hover:bg-indigo-700 transition-colors duration-300 transform hover:scale-105">
-                        Get AI Insight
+        <!-- Admin Section for Creating Recaps -->
+        <section id="admin-section" class="max-w-4xl mx-auto text-center mb-16 hidden">
+          <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-8">Create a New Recap</h2>
+          <div class="bg-white rounded-2xl shadow-lg p-8 border border-gray-200">
+            <p class="text-gray-600 mb-6">
+                Enter a query and our AI will generate a recap. You can then publish it directly to your website.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center mb-6">
+                <input type="text" id="ai-query" placeholder="e.g., What are the key takeaways from the recent budget?" class="flex-1 px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-300 text-gray-900">
+                <button id="get-insight-btn" class="bg-indigo-600 text-white font-bold py-3 px-6 rounded-xl shadow-md hover:bg-indigo-700 transition-colors duration-300 transform hover:scale-105">
+                    Generate Recap
+                </button>
+            </div>
+            <div id="ai-result-container" class="mt-8 text-left p-6 bg-gray-50 rounded-lg hidden">
+                <div id="loading-indicator" class="text-center text-gray-500 font-medium hidden">
+                    Analyzing news... this may take a moment.
+                </div>
+                <h3 id="ai-title" class="text-xl font-bold text-gray-900 mb-2 hidden"></h3>
+                <p id="ai-result" class="text-gray-700 leading-relaxed"></p>
+                <div id="audio-container" class="mt-4 hidden">
+                    <button id="play-audio-btn" class="bg-gray-200 text-gray-800 py-2 px-4 rounded-full font-medium transition-colors hover:bg-gray-300">
+                        Play Audio Recap
                     </button>
                 </div>
-                <div id="ai-result-container" class="mt-8 text-left p-6 bg-gray-50 rounded-lg hidden">
-                    <div id="loading-indicator" class="text-center text-gray-500 font-medium hidden">
-                        Analyzing news... this may take a moment.
-                    </div>
-                    <p id="ai-result" class="text-gray-700 leading-relaxed"></p>
-                    <div id="audio-container" class="mt-4 hidden">
-                        <button id="play-audio-btn" class="bg-gray-200 text-gray-800 py-2 px-4 rounded-full font-medium transition-colors hover:bg-gray-300">
-                            Play Audio Recap
-                        </button>
-                    </div>
-                    <div id="visualization-container" class="mt-6 flex justify-center">
-                        <!-- Dynamic chart will be rendered here -->
-                        <svg id="chart" class="w-full h-64 bg-white rounded-lg shadow-inner"></svg>
-                    </div>
-                    <div id="citations" class="mt-4 text-xs text-gray-500"></div>
+                <div id="visualization-container" class="mt-6 flex justify-center">
+                    <svg id="chart" class="w-full h-64 bg-white rounded-lg shadow-inner"></svg>
                 </div>
+                <div id="citations" class="mt-4 text-xs text-gray-500"></div>
+                <button id="publish-btn" class="bg-green-600 text-white font-bold py-3 px-6 rounded-xl shadow-md hover:bg-green-700 transition-colors duration-300 transform hover:scale-105 mt-6 hidden">
+                    Publish to Website
+                </button>
             </div>
+          </div>
         </section>
 
-        <!-- Recent Recaps Section -->
-        <section id="recaps" class="max-w-7xl mx-auto mb-16">
+        <!-- Dynamic Recaps Section -->
+        <section id="recaps" class="max-w-7xl mx-auto mb-16 hidden">
             <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 text-center mb-12">Latest Recaps</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <!-- Recap Card 1 -->
-                <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-200 hover:shadow-xl transition-shadow duration-300">
-                    <img src="https://placehold.co/600x400/808080/FFFFFF?text=AI+Generated+Chart" alt="AI Analysis Chart" class="rounded-xl mb-4 w-full h-auto">
-                    <h3 class="text-xl font-bold text-gray-900 mb-2">The Week in Tech: AI Adoption in Bangalore</h3>
-                    <p class="text-gray-600 text-sm mb-4">Our AI sifts through data to reveal key trends in tech startups and talent migration. Read the full analysis.</p>
-                    <a href="#" class="text-indigo-600 font-medium hover:underline transition-colors">Read More &rarr;</a>
-                </div>
-                
-                <!-- Recap Card 2 -->
-                <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-200 hover:shadow-xl transition-shadow duration-300">
-                    <img src="https://placehold.co/600x400/808080/FFFFFF?text=AI+Generated+Chart" alt="Political Map Graphic" class="rounded-xl mb-4 w-full h-auto">
-                    <h3 class="text-xl font-bold text-gray-900 mb-2">Political Recap: Key Legislative Shifts in Q4</h3>
-                    <p class="text-gray-600 text-sm mb-4">A breakdown of recent policy changes and their potential impact on national infrastructure projects. Learn more inside.</p>
-                    <a href="#" class="text-indigo-600 font-medium hover:underline transition-colors">Read More &rarr;</a>
-                </div>
-
-                <!-- Recap Card 3 -->
-                <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-200 hover:shadow-xl transition-shadow duration-300">
-                    <img src="https://placehold.co/600x400/808080/FFFFFF?text=AI+Generated+Chart" alt="Economic Chart Graphic" class="rounded-xl mb-4 w-full h-auto">
-                    <h3 class="text-xl font-bold text-gray-900 mb-2">Economic Digest: Inflationary Trends and RBI Actions</h3>
-                    <p class="text-gray-600 text-sm mb-4">Our model analyzes financial data to explain recent trends and forecast future economic stability. Read the full report.</p>
-                    <a href="#" class="text-indigo-600 font-medium hover:underline transition-colors">Read More &rarr;</a>
-                </div>
+            <div id="recaps-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Recaps will be dynamically loaded here from Firestore -->
             </div>
         </section>
 
@@ -196,6 +268,8 @@
             const playAudioBtn = document.getElementById('play-audio-btn');
             const citationsElement = document.getElementById('citations');
             const chartSvg = d3.select("#chart");
+            const publishBtn = document.getElementById('publish-btn');
+            const aiTitleElement = document.getElementById('ai-title');
 
             if (!query) {
                 resultElement.textContent = 'Please enter a query.';
@@ -209,9 +283,11 @@
             audioContainer.classList.add('hidden');
             chartSvg.html(''); // Clear previous chart
             loadingIndicator.classList.remove('hidden');
+            publishBtn.classList.add('hidden');
+            aiTitleElement.classList.add('hidden');
             
             // API call to the Gemini API with search grounding
-            const systemPrompt = "You are a professional news analyst. Provide a concise, clear recap of the requested news topic in India. Be factual and a neutral tone. The response should be a single, well-structured paragraph. Do not add any conversational text.";
+            const systemPrompt = "You are a professional news analyst. Provide a concise, clear recap of the requested news topic in India. Be factual and a neutral tone. The response should be a single, well-structured paragraph. Also, generate a title for the recap in a separate sentence at the beginning.";
             const userQuery = query;
             const apiKey = "";
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
@@ -238,7 +314,11 @@
                 const textCandidate = textResult.candidates?.[0];
 
                 if (textCandidate && textCandidate.content?.parts?.[0]?.text) {
-                    const text = textCandidate.content.parts[0].text;
+                    const fullText = textCandidate.content.parts[0].text;
+                    const lines = fullText.split('\n');
+                    const title = lines[0].replace('Title: ', '').trim();
+                    const content = lines.slice(1).join('\n').trim();
+
                     let sources = [];
                     const groundingMetadata = textCandidate.groundingMetadata;
                     if (groundingMetadata && groundingMetadata.groundingAttributions) {
@@ -250,7 +330,19 @@
                             .filter(source => source.uri && source.title);
                     }
 
-                    resultElement.textContent = text;
+                    aiTitleElement.textContent = title;
+                    aiTitleElement.classList.remove('hidden');
+                    resultElement.textContent = content;
+                    publishBtn.classList.remove('hidden');
+
+                    publishBtn.onclick = () => {
+                        window.addRecapToFirestore({
+                            title: title,
+                            content: content,
+                            imageUrl: 'https://placehold.co/600x400/808080/FFFFFF?text=Recap+India' // Placeholder image for now
+                        });
+                    };
+
                     if (sources.length > 0) {
                         const citationHtml = sources.map((source, index) => `
                             <a href="${source.uri}" target="_blank" rel="noopener noreferrer" class="hover:underline text-blue-500">
@@ -269,7 +361,7 @@
                     // --- AI-Generated Audio (TTS) ---
                     try {
                         const ttsPayload = {
-                            contents: [{ parts: [{ text: text }] }],
+                            contents: [{ parts: [{ text: content }] }],
                             generationConfig: {
                                 responseModalities: ["AUDIO"],
                                 speechConfig: {
